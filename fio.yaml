@@ -1,15 +1,13 @@
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: fio
   labels:
     app: fio
 spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: fio
+  parallelism: 3
+  completions: 3
   template:
     metadata:
       labels:
@@ -36,7 +34,7 @@ spec:
         - name: fio-data
           mountPath: /scratch
         imagePullPolicy: Always
-      restartPolicy: Always
+      restartPolicy: Never
       volumes:
       - name: fio-config-vol
         configMap:
