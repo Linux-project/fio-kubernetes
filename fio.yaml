@@ -14,7 +14,8 @@ spec:
         app: fio
     spec:
       nodeSelector:
-        kubernetes.io/hostname: k1-bf30
+        # kubernetes.io/hostname: k1-bf30
+        kubernetes.io/hostname: k1-8843
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
