@@ -345,7 +345,327 @@ leader writes specifically.
 
 ## Dell Firmware
 
-Run on r620c only with the dell firmware:
+Run on r620c with the dell firmware with write back cache enabled on each of
+the 4 raid0 virtual disks.
+
+During the fio run on Proxmox VM k1-bf30, the k1c controller node VM running on
+the same Proxmost host starts to experience errors.  Visible with `kubectl logs
+etcd-k1c -n kube-system -f`.
+
+```
+2021-05-14 16:47:28.068343 I | etcdserver/api/etcdhttp: /health OK (status code 200)
+2021-05-14 16:47:39.063518 W | etcdserver/api/etcdhttp: /health error; QGET failed etcdserver: request timed out (status code 503)
+2021-05-14 16:47:40.070062 W | wal: sync duration of 2.004393954s, expected less than 1s
+2021-05-14 16:47:40.074621 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (1.999933111s) to execute
+2021-05-14 16:47:40.074684 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000075287s) to execute
+2021-05-14 16:47:40.482463 W | etcdserver: request "header:<ID:11233518338286848764 username:\"kube-apiserver-etcd-client\" auth_revision:1 > lease_grant:<ttl:15-second id:1be57969336c8afb>" with result "size:43" took too long (411.876518ms) to execute
+2021-05-14 16:47:40.512613 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:506" took too long (2.261772101s) to execute
+2021-05-14 16:47:40.512996 W | etcdserver: read-only range request "key:\"/registry/volumeattachments/\" range_end:\"/registry/volumeattachments0\" count_only:true " with result "range_response_count:0 size:7" took too long (2.045778732s) to execute
+2021-05-14 16:47:40.513146 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (426.493863ms) to execute
+2021-05-14 16:47:40.513321 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "range_response_count:1 size:479" took too long (2.034494424s) to execute
+2021-05-14 16:47:43.703769 W | wal: sync duration of 1.201165229s, expected less than 1s
+2021-05-14 16:47:45.073659 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000097905s) to execute
+WARNING: 2021/05/14 16:47:45 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:47:45.767148 W | wal: sync duration of 2.063208783s, expected less than 1s
+2021-05-14 16:47:45.769730 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "range_response_count:1 size:479" took too long (2.917698182s) to execute
+2021-05-14 16:47:45.771116 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:506" took too long (987.080106ms) to execute
+2021-05-14 16:47:45.771404 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (689.519595ms) to execute
+2021-05-14 16:47:45.772156 W | etcdserver: read-only range request "key:\"/registry/poddisruptionbudgets/\" range_end:\"/registry/poddisruptionbudgets0\" count_only:true " with result "range_response_count:0 size:9" took too long (313.320874ms) to execute
+2021-05-14 16:47:49.066706 W | etcdserver/api/etcdhttp: /health error; QGET failed etcdserver: request timed out (status code 503)
+2021-05-14 16:47:50.073968 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (1.999816027s) to execute
+2021-05-14 16:47:50.074554 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context canceled" took too long (2.000335768s) to execute
+WARNING: 2021/05/14 16:47:50 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:47:50.178348 W | wal: sync duration of 2.734074977s, expected less than 1s
+2021-05-14 16:47:51.660219 W | wal: sync duration of 1.481505633s, expected less than 1s
+2021-05-14 16:47:51.667422 W | etcdserver: read-only range request "key:\"/registry/namespaces/default\" " with result "range_response_count:1 size:343" took too long (4.21749112s) to execute
+2021-05-14 16:47:51.671328 W | etcdserver: read-only range request "key:\"/registry/ingressclasses/\" range_end:\"/registry/ingressclasses0\" count_only:true " with result "range_response_count:0 size:7" took too long (2.997925961s) to execute
+2021-05-14 16:47:51.671368 W | etcdserver: read-only range request "key:\"/registry/roles/\" range_end:\"/registry/roles0\" count_only:true " with result "range_response_count:0 size:9" took too long (1.638685129s) to execute
+2021-05-14 16:47:51.671458 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:506" took too long (3.292675654s) to execute
+2021-05-14 16:47:51.671968 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "range_response_count:1 size:479" took too long (1.948710623s) to execute
+2021-05-14 16:47:51.672066 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (1.587452648s) to execute
+2021-05-14 16:47:51.672234 W | etcdserver: read-only range request "key:\"/registry/pods/\" range_end:\"/registry/pods0\" count_only:true " with result "range_response_count:0 size:9" took too long (4.037966221s) to execute
+2021-05-14 16:47:51.672450 W | etcdserver: read-only range request "key:\"/registry/apm.k8s.elastic.co/apmservers/\" range_end:\"/registry/apm.k8s.elastic.co/apmservers0\" count_only:true " with result "range_response_count:0 size:7" took too long (490.308153ms) to execute
+2021-05-14 16:47:51.674384 W | etcdserver: read-only range request "key:\"/registry/enterprisesearch.k8s.elastic.co/enterprisesearches/\" range_end:\"/registry/enterprisesearch.k8s.elastic.co/enterprisesearches0\" count_only:true " with result "range_response_count:0 size:7" took too long (2.011775706s) to execute
+2021-05-14 16:47:56.073940 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.00005527s) to execute
+2021-05-14 16:47:56.653048 W | wal: sync duration of 3.146738308s, expected less than 1s
+2021-05-14 16:47:56.771375 W | etcdserver: request "header:<ID:519736299082878547 > lease_revoke:<id:1be57969336c8afb>" with result "size:31" took too long (117.442308ms) to execute
+2021-05-14 16:47:56.780305 W | etcdserver: read-only range request "key:\"/registry/leases/\" range_end:\"/registry/leases0\" count_only:true " with result "range_response_count:0 size:9" took too long (2.818954211s) to execute
+2021-05-14 16:47:56.781381 W | etcdserver: read-only range request "key:\"/registry/flowschemas/exempt\" " with result "range_response_count:1 size:881" took too long (2.431694823s) to execute
+2021-05-14 16:47:56.781588 W | etcdserver: read-only range request "key:\"/registry/priorityclasses/\" range_end:\"/registry/priorityclasses0\" count_only:true " with result "range_response_count:0 size:9" took too long (494.969411ms) to execute
+2021-05-14 16:47:56.781880 W | etcdserver: read-only range request "key:\"/registry/services/endpoints/kubernetes-dashboard/dashboard-metrics-scraper\" " with result "range_response_count:1 size:731" took too long (185.308379ms) to execute
+2021-05-14 16:47:56.782087 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (697.552917ms) to execute
+2021-05-14 16:47:56.782402 W | etcdserver: read-only range request "key:\"/registry/configmaps/\" range_end:\"/registry/configmaps0\" count_only:true " with result "range_response_count:0 size:9" took too long (830.787522ms) to execute
+2021-05-14 16:47:56.783491 W | etcdserver: read-only range request "key:\"/registry/secrets/\" range_end:\"/registry/secrets0\" count_only:true " with result "range_response_count:0 size:9" took too long (1.279636775s) to execute
+2021-05-14 16:47:56.783921 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:506" took too long (1.611870772s) to execute
+2021-05-14 16:47:56.784211 W | etcdserver: read-only range request "key:\"/registry/services/specs/\" range_end:\"/registry/services/specs0\" count_only:true " with result "range_response_count:0 size:9" took too long (1.878266294s) to execute
+2021-05-14 16:47:56.784481 W | etcdserver: read-only range request "key:\"/registry/ingress/\" range_end:\"/registry/ingress0\" count_only:true " with result "range_response_count:0 size:7" took too long (1.855380479s) to execute
+2021-05-14 16:47:56.784901 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "range_response_count:1 size:479" took too long (2.042504583s) to execute
+2021-05-14 16:47:56.785160 W | etcdserver: read-only range request "key:\"/registry/ingress/\" range_end:\"/registry/ingress0\" count_only:true " with result "range_response_count:0 size:7" took too long (1.703574878s) to execute
+2021-05-14 16:47:58.073976 I | etcdserver/api/etcdhttp: /health OK (status code 200)
+2021-05-14 16:48:01.073915 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context canceled" took too long (1.999793156s) to execute
+WARNING: 2021/05/14 16:48:01 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:48:01.700970 W | wal: sync duration of 2.692862574s, expected less than 1s
+2021-05-14 16:48:01.861234 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (775.02307ms) to execute
+2021-05-14 16:48:01.861431 W | etcdserver: read-only range request "key:\"/registry/replicasets/\" range_end:\"/registry/replicasets0\" count_only:true " with result "range_response_count:0 size:9" took too long (1.424579997s) to execute
+2021-05-14 16:48:01.861673 W | etcdserver: read-only range request "key:\"/registry/daemonsets/\" range_end:\"/registry/daemonsets0\" count_only:true " with result "range_response_count:0 size:9" took too long (162.257314ms) to execute
+2021-05-14 16:48:01.861841 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:506" took too long (2.240889051s) to execute
+2021-05-14 16:48:05.594378 W | wal: sync duration of 1.894286851s, expected less than 1s
+2021-05-14 16:48:06.075458 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context canceled" took too long (1.999822484s) to execute
+WARNING: 2021/05/14 16:48:06 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:48:08.084591 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.00004746s) to execute
+2021-05-14 16:48:08.218408 W | wal: sync duration of 2.623595635s, expected less than 1s
+2021-05-14 16:48:08.359222 W | etcdserver: request "header:<ID:11233518338286848945 username:\"kube-apiserver-etcd-client\" auth_revision:1 > txn:<compare:<target:MOD key:\"/registry/configmaps/elastic-system/elastic-operator-leader\" mod_revision:2130505 > success:<request_put:<key:\"/registry/configmaps/elastic-system/elastic-operator-leader\" value_size:522 >> failure:<>>" with result "size:20" took too long (140.154041ms) to execute
+2021-05-14 16:48:08.373517 I | etcdserver/api/etcdhttp: /health OK (status code 200)
+2021-05-14 16:48:08.379442 W | etcdserver: read-only range request "key:\"/registry/jobs/\" range_end:\"/registry/jobs0\" count_only:true " with result "range_response_count:0 size:9" took too long (4.104346821s) to execute
+2021-05-14 16:48:08.379871 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (288.648477ms) to execute
+2021-05-14 16:48:08.380124 W | etcdserver: read-only range request "key:\"/registry/deployments/\" range_end:\"/registry/deployments0\" count_only:true " with result "range_response_count:0 size:9" took too long (2.90187721s) to execute
+2021-05-14 16:48:08.380399 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (302.991875ms) to execute
+2021-05-14 16:48:08.380714 W | etcdserver: read-only range request "key:\"/registry/namespaces/default\" " with result "range_response_count:1 size:343" took too long (928.401467ms) to execute
+2021-05-14 16:48:08.381547 W | etcdserver: read-only range request "key:\"/registry/elasticsearch.k8s.elastic.co/elasticsearches/\" range_end:\"/registry/elasticsearch.k8s.elastic.co/elasticsearches0\" count_only:true " with result "range_response_count:0 size:7" took too long (3.112434664s) to execute
+2021-05-14 16:48:08.381632 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "range_response_count:1 size:479" took too long (2.501435641s) to execute
+2021-05-14 16:48:08.382144 W | etcdserver: read-only range request "key:\"/registry/rolebindings/\" range_end:\"/registry/rolebindings0\" count_only:true " with result "range_response_count:0 size:9" took too long (3.510267029s) to execute
+2021-05-14 16:48:08.382859 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:506" took too long (3.909593314s) to execute
+2021-05-14 16:48:12.074812 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000097059s) to execute
+WARNING: 2021/05/14 16:48:12 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:48:13.947012 W | wal: sync duration of 3.201270291s, expected less than 1s
+2021-05-14 16:48:13.947762 W | etcdserver: request "header:<ID:11233518338286848975 username:\"kube-apiserver-etcd-client\" auth_revision:1 > txn:<compare:<target:MOD key:\"/registry/configmaps/elastic-system/elastic-operator-leader\" mod_revision:2130512 > success:<request_put:<key:\"/registry/configmaps/elastic-system/elastic-operator-leader\" value_size:522 >> failure:<>>" with result "size:20" took too long (3.201838504s) to execute
+2021-05-14 16:48:14.086703 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000163334s) to execute
+2021-05-14 16:48:14.221461 W | etcdserver: read-only range request "key:\"/registry/runtimeclasses/\" range_end:\"/registry/runtimeclasses0\" count_only:true " with result "range_response_count:0 size:7" took too long (3.495616621s) to execute
+2021-05-14 16:48:14.221533 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (120.354716ms) to execute
+2021-05-14 16:48:14.222132 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "range_response_count:1 size:479" took too long (3.303652653s) to execute
+2021-05-14 16:48:14.222208 W | etcdserver: read-only range request "key:\"/registry/events/\" range_end:\"/registry/events0\" count_only:true " with result "range_response_count:0 size:9" took too long (3.222538639s) to execute
+2021-05-14 16:48:14.222737 W | etcdserver: read-only range request "key:\"/registry/csistoragecapacities/\" range_end:\"/registry/csistoragecapacities0\" count_only:true " with result "range_response_count:0 size:7" took too long (1.74756842s) to execute
+2021-05-14 16:48:14.223126 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:506" took too long (2.817382778s) to execute
+2021-05-14 16:48:19.064094 W | etcdserver/api/etcdhttp: /health error; QGET failed etcdserver: request timed out (status code 503)
+2021-05-14 16:48:19.723461 W | wal: sync duration of 2.260260776s, expected less than 1s
+2021-05-14 16:48:19.893530 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (1.816992278s) to execute
+2021-05-14 16:48:19.904353 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "range_response_count:1 size:479" took too long (360.43429ms) to execute
+2021-05-14 16:48:19.904749 W | etcdserver: read-only range request "key:\"/registry/ingressclasses/\" range_end:\"/registry/ingressclasses0\" count_only:true " with result "range_response_count:0 size:7" took too long (642.285016ms) to execute
+2021-05-14 16:48:19.905093 W | etcdserver: read-only range request "key:\"/registry/crd.projectcalico.org/networkpolicies/\" range_end:\"/registry/crd.projectcalico.org/networkpolicies0\" count_only:true " with result "range_response_count:0 size:7" took too long (1.32056446s) to execute
+2021-05-14 16:48:19.905397 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (1.828616262s) to execute
+2021-05-14 16:48:22.828626 W | wal: sync duration of 1.220041901s, expected less than 1s
+2021-05-14 16:48:24.075014 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000075414s) to execute
+2021-05-14 16:48:25.298470 W | wal: sync duration of 2.469547286s, expected less than 1s
+2021-05-14 16:48:25.306358 W | etcdserver: read-only range request "key:\"/registry/services/endpoints/\" range_end:\"/registry/services/endpoints0\" count_only:true " with result "range_response_count:0 size:9" took too long (1.821408643s) to execute
+2021-05-14 16:48:25.306441 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "range_response_count:1 size:479" took too long (1.696113013s) to execute
+2021-05-14 16:48:25.306502 W | etcdserver: read-only range request "key:\"/registry/resourcequotas/\" range_end:\"/registry/resourcequotas0\" count_only:true " with result "range_response_count:0 size:7" took too long (1.458550475s) to execute
+2021-05-14 16:48:25.306683 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:505" took too long (420.08481ms) to execute
+2021-05-14 16:48:25.307325 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (1.221008478s) to execute
+2021-05-14 16:48:29.063647 W | etcdserver/api/etcdhttp: /health error; QGET failed etcdserver: request timed out (status code 503)
+2021-05-14 16:48:29.498144 W | wal: sync duration of 2.035124863s, expected less than 1s
+2021-05-14 16:48:30.073833 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000048363s) to execute
+2021-05-14 16:48:30.073978 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000116518s) to execute
+2021-05-14 16:48:30.311372 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:505" took too long (2.656798046s) to execute
+2021-05-14 16:48:30.314663 W | etcdserver: read-only range request "key:\"/registry/rolebindings/\" range_end:\"/registry/rolebindings0\" count_only:true " with result "range_response_count:0 size:9" took too long (2.610577698s) to execute
+2021-05-14 16:48:30.314912 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (229.378784ms) to execute
+2021-05-14 16:48:30.315166 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "range_response_count:1 size:479" took too long (1.029279538s) to execute
+2021-05-14 16:48:30.315631 W | etcdserver: read-only range request "key:\"/registry/csinodes/\" range_end:\"/registry/csinodes0\" count_only:true " with result "range_response_count:0 size:9" took too long (1.374788063s) to execute
+2021-05-14 16:48:30.315886 W | etcdserver: read-only range request "key:\"/registry/beat.k8s.elastic.co/beats/\" range_end:\"/registry/beat.k8s.elastic.co/beats0\" count_only:true " with result "range_response_count:0 size:7" took too long (1.047840404s) to execute
+2021-05-14 16:48:34.677629 W | wal: sync duration of 2.157039294s, expected less than 1s
+2021-05-14 16:48:35.072925 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000091976s) to execute
+2021-05-14 16:48:35.629220 W | etcdserver: request "header:<ID:519736299082878764 > lease_revoke:<id:510d79690b060722>" with result "size:31" took too long (951.333828ms) to execute
+2021-05-14 16:48:35.700603 W | wal: sync duration of 1.02278617s, expected less than 1s
+2021-05-14 16:48:35.704415 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:505" took too long (2.882976411s) to execute
+2021-05-14 16:48:35.706290 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "range_response_count:1 size:479" took too long (2.769937461s) to execute
+2021-05-14 16:48:35.706354 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (621.857896ms) to execute
+2021-05-14 16:48:35.706545 W | etcdserver: read-only range request "key:\"/registry/poddisruptionbudgets/\" range_end:\"/registry/poddisruptionbudgets0\" count_only:true " with result "range_response_count:0 size:9" took too long (687.209083ms) to execute
+2021-05-14 16:48:35.706845 W | etcdserver: read-only range request "key:\"/registry/namespaces/\" range_end:\"/registry/namespaces0\" count_only:true " with result "range_response_count:0 size:9" took too long (397.601456ms) to execute
+2021-05-14 16:48:35.706865 W | etcdserver: read-only range request "key:\"/registry/clusterrolebindings/\" range_end:\"/registry/clusterrolebindings0\" count_only:true " with result "range_response_count:0 size:9" took too long (1.521254619s) to execute
+2021-05-14 16:48:35.707018 W | etcdserver: read-only range request "key:\"/registry/clusterroles/\" range_end:\"/registry/clusterroles0\" count_only:true " with result "range_response_count:0 size:9" took too long (528.475448ms) to execute
+2021-05-14 16:48:35.707124 W | etcdserver: read-only range request "key:\"/registry/ingress/\" range_end:\"/registry/ingress0\" count_only:true " with result "range_response_count:0 size:7" took too long (1.888495463s) to execute
+2021-05-14 16:48:35.707343 W | etcdserver: read-only range request "key:\"/registry/horizontalpodautoscalers/\" range_end:\"/registry/horizontalpodautoscalers0\" count_only:true " with result "range_response_count:0 size:7" took too long (2.523678135s) to execute
+2021-05-14 16:48:37.937598 W | etcdserver: read-only range request "key:\"/registry/persistentvolumeclaims/\" range_end:\"/registry/persistentvolumeclaims0\" count_only:true " with result "range_response_count:0 size:7" took too long (296.490442ms) to execute
+2021-05-14 16:48:39.063879 W | etcdserver/api/etcdhttp: /health error; QGET failed etcdserver: request timed out (status code 503)
+2021-05-14 16:48:40.077491 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (1.999985333s) to execute
+WARNING: 2021/05/14 16:48:40 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:48:40.077698 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000045557s) to execute
+WARNING: 2021/05/14 16:48:40 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:48:40.579897 W | wal: sync duration of 2.515287274s, expected less than 1s
+2021-05-14 16:48:41.432226 W | etcdserver: request "header:<ID:11233518338286849148 username:\"kube-apiserver-etcd-client\" auth_revision:1 > txn:<compare:<target:MOD key:\"/registry/configmaps/elastic-system/elastic-operator-leader\" mod_revision:2130585 > success:<request_put:<key:\"/registry/configmaps/elastic-system/elastic-operator-leader\" value_size:522 >> failure:<>>" with result "size:20" took too long (851.871312ms) to execute
+2021-05-14 16:48:41.497708 W | etcdserver: read-only range request "key:\"/registry/validatingwebhookconfigurations/\" range_end:\"/registry/validatingwebhookconfigurations0\" count_only:true " with result "range_response_count:0 size:9" took too long (2.908214002s) to execute
+2021-05-14 16:48:41.497802 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (1.409157538s) to execute
+2021-05-14 16:48:41.498438 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "range_response_count:1 size:479" took too long (1.513382525s) to execute
+2021-05-14 16:48:41.498584 W | etcdserver: read-only range request "key:\"/registry/networkpolicies/\" range_end:\"/registry/networkpolicies0\" count_only:true " with result "range_response_count:0 size:7" took too long (2.626543682s) to execute
+2021-05-14 16:48:41.498825 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:505" took too long (2.368925277s) to execute
+2021-05-14 16:48:44.400828 W | etcdserver: read-only range request "key:\"/registry/certificatesigningrequests/\" range_end:\"/registry/certificatesigningrequests0\" count_only:true " with result "range_response_count:0 size:7" took too long (105.508839ms) to execute
+2021-05-14 16:48:49.063667 W | etcdserver/api/etcdhttp: /health error; QGET failed etcdserver: request timed out (status code 503)
+2021-05-14 16:48:50.082171 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.00009962s) to execute
+2021-05-14 16:48:50.082848 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context canceled" took too long (2.000677569s) to execute
+WARNING: 2021/05/14 16:48:50 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:48:50.755798 W | wal: sync duration of 3.292073398s, expected less than 1s
+2021-05-14 16:48:52.092354 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (1.999986972s) to execute
+2021-05-14 16:48:53.212714 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "error:context deadline exceeded" took too long (4.994528585s) to execute
+2021-05-14 16:48:54.104468 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000070932s) to execute
+2021-05-14 16:48:54.620244 W | etcdserver: timed out waiting for read index response (local node might have slow network)
+2021-05-14 16:48:54.620456 W | etcdserver: read-only range request "key:\"/registry/persistentvolumes/\" range_end:\"/registry/persistentvolumes0\" count_only:true " with result "error:etcdserver: request timed out" took too long (7.000598776s) to execute
+2021-05-14 16:48:54.661744 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "error:context canceled" took too long (4.9943588s) to execute
+WARNING: 2021/05/14 16:48:54 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:48:56.116967 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000011027s) to execute
+2021-05-14 16:48:58.126565 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000114166s) to execute
+2021-05-14 16:48:59.063665 W | etcdserver/api/etcdhttp: /health error; QGET failed etcdserver: request timed out (status code 503)
+2021-05-14 16:49:00.074357 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context canceled" took too long (1.99998013s) to execute
+WARNING: 2021/05/14 16:49:00 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:49:00.134105 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000063271s) to execute
+2021-05-14 16:49:00.333552 W | wal: sync duration of 9.57730431s, expected less than 1s
+2021-05-14 16:49:00.439600 W | etcdserver: ignored out-of-date read index response; local node read indexes queueing up and waiting to be in sync with leader (request ID want 15063829820687648635, got 15063829820687648630)
+2021-05-14 16:49:00.484946 W | etcdserver: read-only range request "key:\"/registry/crd.projectcalico.org/kubecontrollersconfigurations/\" range_end:\"/registry/crd.projectcalico.org/kubecontrollersconfigurations0\" count_only:true " with result "range_response_count:0 size:9" took too long (9.559154555s) to execute
+2021-05-14 16:49:00.485151 W | etcdserver: read-only range request "key:\"/registry/flowschemas/exempt\" " with result "range_response_count:1 size:881" took too long (6.134903437s) to execute
+2021-05-14 16:49:00.485552 W | etcdserver: read-only range request "key:\"/registry/events/\" range_end:\"/registry/events0\" count_only:true " with result "range_response_count:0 size:9" took too long (11.028761784s) to execute
+2021-05-14 16:49:00.981660 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "error:context canceled" took too long (4.994961352s) to execute
+WARNING: 2021/05/14 16:49:00 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:49:02.144566 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000066404s) to execute
+WARNING: 2021/05/14 16:49:02 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:49:02.342322 W | wal: sync duration of 1.857681007s, expected less than 1s
+2021-05-14 16:49:02.353904 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "error:context deadline exceeded" took too long (4.994882026s) to execute
+2021-05-14 16:49:04.156768 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context canceled" took too long (1.999971009s) to execute
+WARNING: 2021/05/14 16:49:04 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:49:04.602303 W | wal: sync duration of 1.780658921s, expected less than 1s
+2021-05-14 16:49:04.638035 W | etcdserver: request "header:<ID:11233518338286849296 username:\"kube-apiserver-etcd-client\" auth_revision:1 > txn:<compare:<target:MOD key:\"/registry/leases/kube-system/kube-controller-manager\" mod_revision:2130651 > success:<request_put:<key:\"/registry/leases/kube-system/kube-controller-manager\" value_size:425 >> failure:<>>" with result "size:20" took too long (1.816238952s) to execute
+2021-05-14 16:49:04.639385 W | etcdserver: read-only range request "key:\"/registry/crd.projectcalico.org/bgpconfigurations/\" range_end:\"/registry/crd.projectcalico.org/bgpconfigurations0\" count_only:true " with result "range_response_count:0 size:9" took too long (7.556052557s) to execute
+2021-05-14 16:49:04.639481 W | etcdserver: read-only range request "key:\"/registry/prioritylevelconfigurations/\" range_end:\"/registry/prioritylevelconfigurations0\" count_only:true " with result "range_response_count:0 size:9" took too long (6.056164089s) to execute
+2021-05-14 16:49:04.639735 W | etcdserver: read-only range request "key:\"/registry/namespaces/default\" " with result "range_response_count:1 size:343" took too long (6.878527672s) to execute
+2021-05-14 16:49:04.639815 W | etcdserver: read-only range request "key:\"/registry/enterprisesearch.k8s.elastic.co/enterprisesearches/\" range_end:\"/registry/enterprisesearch.k8s.elastic.co/enterprisesearches0\" count_only:true " with result "range_response_count:0 size:7" took too long (5.609663817s) to execute
+2021-05-14 16:49:04.640084 W | etcdserver: read-only range request "key:\"/registry/services/endpoints/kubernetes-dashboard/dashboard-metrics-scraper\" " with result "range_response_count:1 size:731" took too long (7.834224269s) to execute
+2021-05-14 16:49:04.640375 W | etcdserver: read-only range request "key:\"/registry/csinodes/\" range_end:\"/registry/csinodes0\" count_only:true " with result "range_response_count:0 size:9" took too long (7.966897734s) to execute
+2021-05-14 16:49:04.640647 W | etcdserver: read-only range request "key:\"/registry/crd.projectcalico.org/clusterinformations/\" range_end:\"/registry/crd.projectcalico.org/clusterinformations0\" count_only:true " with result "range_response_count:0 size:9" took too long (8.640585048s) to execute
+2021-05-14 16:49:04.640772 W | etcdserver: read-only range request "key:\"/registry/crd.projectcalico.org/ipamhandles/\" range_end:\"/registry/crd.projectcalico.org/ipamhandles0\" count_only:true " with result "range_response_count:0 size:9" took too long (8.558093266s) to execute
+2021-05-14 16:49:04.727681 W | etcdserver: read-only range request "key:\"/registry/priorityclasses/\" range_end:\"/registry/priorityclasses0\" count_only:true " with result "range_response_count:0 size:9" took too long (855.607029ms) to execute
+2021-05-14 16:49:04.727738 W | etcdserver: read-only range request "key:\"/registry/csidrivers/\" range_end:\"/registry/csidrivers0\" count_only:true " with result "range_response_count:0 size:7" took too long (584.216911ms) to execute
+2021-05-14 16:49:04.727754 W | etcdserver: read-only range request "key:\"/registry/statefulsets/\" range_end:\"/registry/statefulsets0\" count_only:true " with result "range_response_count:0 size:9" took too long (4.010953902s) to execute
+2021-05-14 16:49:04.727824 W | etcdserver: read-only range request "key:\"/registry/runtimeclasses/\" range_end:\"/registry/runtimeclasses0\" count_only:true " with result "range_response_count:0 size:7" took too long (611.397079ms) to execute
+2021-05-14 16:49:04.727922 W | etcdserver: read-only range request "key:\"/registry/crd.projectcalico.org/ipamblocks/\" range_end:\"/registry/crd.projectcalico.org/ipamblocks0\" count_only:true " with result "range_response_count:0 size:9" took too long (1.337282133s) to execute
+2021-05-14 16:49:04.727982 W | etcdserver: read-only range request "key:\"/registry/roles/\" range_end:\"/registry/roles0\" count_only:true " with result "range_response_count:0 size:9" took too long (2.914807893s) to execute
+2021-05-14 16:49:04.728240 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (557.571921ms) to execute
+2021-05-14 16:49:04.728872 W | etcdserver: read-only range request "key:\"/registry/flowschemas/catch-all\" " with result "range_response_count:1 size:992" took too long (4.24042777s) to execute
+2021-05-14 16:49:04.729188 W | etcdserver: read-only range request "key:\"/registry/services/specs/\" range_end:\"/registry/services/specs0\" count_only:true " with result "range_response_count:0 size:9" took too long (1.690302452s) to execute
+2021-05-14 16:49:07.402235 W | wal: sync duration of 1.462896631s, expected less than 1s
+2021-05-14 16:49:08.073681 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context canceled" took too long (1.999985883s) to execute
+WARNING: 2021/05/14 16:49:08 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:49:09.064533 W | etcdserver/api/etcdhttp: /health error; QGET failed etcdserver: request timed out (status code 503)
+2021-05-14 16:49:09.584379 W | wal: sync duration of 2.18193608s, expected less than 1s
+2021-05-14 16:49:09.665525 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:506" took too long (2.761369279s) to execute
+2021-05-14 16:49:09.665823 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (1.586397027s) to execute
+2021-05-14 16:49:09.665950 W | etcdserver: read-only range request "key:\"/registry/namespaces/default\" " with result "range_response_count:1 size:343" took too long (1.903892037s) to execute
+2021-05-14 16:49:09.666193 W | etcdserver: read-only range request "key:\"/registry/validatingwebhookconfigurations/\" range_end:\"/registry/validatingwebhookconfigurations0\" count_only:true " with result "range_response_count:0 size:9" took too long (2.628056857s) to execute
+2021-05-14 16:49:09.666464 W | etcdserver: read-only range request "key:\"/registry/crd.projectcalico.org/globalnetworkpolicies/\" range_end:\"/registry/crd.projectcalico.org/globalnetworkpolicies0\" count_only:true " with result "range_response_count:0 size:7" took too long (2.706834961s) to execute
+2021-05-14 16:49:09.666809 W | etcdserver: read-only range request "key:\"/registry/apiregistration.k8s.io/apiservices/\" range_end:\"/registry/apiregistration.k8s.io/apiservices0\" count_only:true " with result "range_response_count:0 size:9" took too long (1.560084337s) to execute
+2021-05-14 16:49:09.667211 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (1.583823466s) to execute
+2021-05-14 16:49:13.073740 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000058503s) to execute
+WARNING: 2021/05/14 16:49:13 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:49:15.086823 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000051952s) to execute
+2021-05-14 16:49:15.378800 W | wal: sync duration of 4.031454592s, expected less than 1s
+2021-05-14 16:49:15.810105 W | etcdserver: request "header:<ID:519736299082878991 username:\"kube-apiserver-etcd-client\" auth_revision:1 > txn:<compare:<target:MOD key:\"/registry/leases/kube-system/kube-scheduler\" mod_revision:2130680 > success:<request_put:<key:\"/registry/leases/kube-system/kube-scheduler\" value_size:407 >> failure:<>>" with result "size:20" took too long (429.891089ms) to execute
+2021-05-14 16:49:15.969003 W | etcdserver: read-only range request "key:\"/registry/enterprisesearch.k8s.elastic.co/enterprisesearches/\" range_end:\"/registry/enterprisesearch.k8s.elastic.co/enterprisesearches0\" count_only:true " with result "range_response_count:0 size:7" took too long (873.376464ms) to execute
+2021-05-14 16:49:15.969211 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "range_response_count:1 size:479" took too long (2.006104876s) to execute
+2021-05-14 16:49:15.969287 W | etcdserver: read-only range request "key:\"/registry/elasticsearch.k8s.elastic.co/elasticsearches/\" range_end:\"/registry/elasticsearch.k8s.elastic.co/elasticsearches0\" count_only:true " with result "range_response_count:0 size:7" took too long (2.338498303s) to execute
+2021-05-14 16:49:15.969455 W | etcdserver: read-only range request "key:\"/registry/pods/\" range_end:\"/registry/pods0\" count_only:true " with result "range_response_count:0 size:9" took too long (5.463094809s) to execute
+2021-05-14 16:49:15.969668 W | etcdserver: read-only range request "key:\"/registry/apm.k8s.elastic.co/apmservers/\" range_end:\"/registry/apm.k8s.elastic.co/apmservers0\" count_only:true " with result "range_response_count:0 size:7" took too long (4.79487292s) to execute
+2021-05-14 16:49:15.969772 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:506" took too long (2.111609347s) to execute
+2021-05-14 16:49:15.969999 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (871.066461ms) to execute
+2021-05-14 16:49:15.970322 W | etcdserver: read-only range request "key:\"/registry/clusterroles/\" range_end:\"/registry/clusterroles0\" count_only:true " with result "range_response_count:0 size:9" took too long (4.288067468s) to execute
+2021-05-14 16:49:18.022490 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (1.949752766s) to execute
+2021-05-14 16:49:18.022777 W | etcdserver: read-only range request "key:\"/registry/podsecuritypolicy/\" range_end:\"/registry/podsecuritypolicy0\" count_only:true " with result "range_response_count:0 size:9" took too long (1.143156114s) to execute
+2021-05-14 16:49:18.835142 W | wal: sync duration of 1.255294798s, expected less than 1s
+2021-05-14 16:49:18.996797 W | etcdserver: read-only range request "key:\"/registry/events/\" range_end:\"/registry/events0\" count_only:true " with result "range_response_count:0 size:9" took too long (1.340122701s) to execute
+2021-05-14 16:49:18.997224 I | etcdserver/api/etcdhttp: /health OK (status code 200)
+2021-05-14 16:49:18.998935 W | etcdserver: read-only range request "key:\"/registry/namespaces/default\" " with result "range_response_count:1 size:343" took too long (1.236363322s) to execute
+2021-05-14 16:49:18.999228 W | etcdserver: read-only range request "key:\"/registry/jobs/\" range_end:\"/registry/jobs0\" count_only:true " with result "range_response_count:0 size:9" took too long (858.86211ms) to execute
+2021-05-14 16:49:18.999249 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (963.891504ms) to execute
+2021-05-14 16:49:18.999470 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (924.524932ms) to execute
+2021-05-14 16:49:20.364030 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (289.353928ms) to execute
+2021-05-14 16:49:20.364500 W | etcdserver: read-only range request "key:\"/registry/controllerrevisions/\" range_end:\"/registry/controllerrevisions0\" count_only:true " with result "range_response_count:0 size:9" took too long (154.52095ms) to execute
+2021-05-14 16:49:23.511639 W | wal: sync duration of 1.461066482s, expected less than 1s
+2021-05-14 16:49:24.076800 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (1.999974565s) to execute
+2021-05-14 16:49:26.089361 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.00007326s) to execute
+2021-05-14 16:49:27.615878 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "error:context deadline exceeded" took too long (4.992140627s) to execute
+2021-05-14 16:49:28.102476 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.00005594s) to execute
+2021-05-14 16:49:28.164726 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "error:context deadline exceeded" took too long (4.997777754s) to execute
+2021-05-14 16:49:29.063978 W | etcdserver/api/etcdhttp: /health error; QGET failed etcdserver: request timed out (status code 503)
+2021-05-14 16:49:29.076952 W | etcdserver: timed out waiting for read index response (local node might have slow network)
+2021-05-14 16:49:30.079768 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context canceled" took too long (2.000102351s) to execute
+WARNING: 2021/05/14 16:49:30 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:49:30.110348 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000087703s) to execute
+2021-05-14 16:49:31.656676 W | etcdserver: request "header:<ID:519736299082879050 > lease_revoke:<id:1be57969336c8d2b>" with result "size:31" took too long (7.40507015s) to execute
+2021-05-14 16:49:32.123097 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000041697s) to execute
+2021-05-14 16:49:33.645506 W | wal: sync duration of 9.394062782s, expected less than 1s
+2021-05-14 16:49:33.645713 W | etcdserver: ignored out-of-date read index response; local node read indexes queueing up and waiting to be in sync with leader (request ID want 15063829820687648694, got 15063829820687648692)
+2021-05-14 16:49:34.135119 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000075521s) to execute
+2021-05-14 16:49:35.526275 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "error:context deadline exceeded" took too long (4.989718551s) to execute
+2021-05-14 16:49:35.616130 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "error:context deadline exceeded" took too long (4.999097682s) to execute
+2021-05-14 16:49:36.150220 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000050859s) to execute
+2021-05-14 16:49:36.584513 W | etcdserver: request "header:<ID:11233518338286849425 username:\"kube-apiserver-etcd-client\" auth_revision:1 > txn:<compare:<target:MOD key:\"/registry/configmaps/elastic-system/elastic-operator-leader\" mod_revision:2130714 > success:<request_put:<key:\"/registry/configmaps/elastic-system/elastic-operator-leader\" value_size:522 >> failure:<>>" with result "size:20" took too long (2.938613222s) to execute
+2021-05-14 16:49:38.161285 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000620744s) to execute
+2021-05-14 16:49:39.064278 W | etcdserver/api/etcdhttp: /health error; QGET failed etcdserver: request timed out (status code 503)
+2021-05-14 16:49:40.082108 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000038949s) to execute
+2021-05-14 16:49:40.168229 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000054166s) to execute
+2021-05-14 16:49:40.645941 W | etcdserver: timed out waiting for read index response (local node might have slow network)
+2021-05-14 16:49:40.646425 W | etcdserver: read-only range request "key:\"/registry/namespaces/default\" " with result "error:etcdserver: request timed out" took too long (12.883884409s) to execute
+2021-05-14 16:49:40.647197 W | etcdserver: read-only range request "key:\"/registry/volumeattachments/\" range_end:\"/registry/volumeattachments0\" count_only:true " with result "error:etcdserver: request timed out" took too long (15.406929413s) to execute
+2021-05-14 16:49:40.647641 W | etcdserver: read-only range request "key:\"/registry/namespaces/kube-system\" " with result "error:etcdserver: request timed out" took too long (13.961243348s) to execute
+2021-05-14 16:49:40.648286 W | etcdserver: read-only range request "key:\"/registry/ingress/\" range_end:\"/registry/ingress0\" count_only:true " with result "error:etcdserver: request timed out" took too long (13.411354081s) to execute
+2021-05-14 16:49:40.648931 W | etcdserver: read-only range request "key:\"/registry/apm.k8s.elastic.co/apmservers/\" range_end:\"/registry/apm.k8s.elastic.co/apmservers0\" count_only:true " with result "error:etcdserver: request timed out" took too long (13.51900025s) to execute
+2021-05-14 16:49:40.650184 W | etcdserver: read-only range request "key:\"/registry/crd.projectcalico.org/globalnetworksets/\" range_end:\"/registry/crd.projectcalico.org/globalnetworksets0\" count_only:true " with result "error:etcdserver: request timed out" took too long (15.685898862s) to execute
+2021-05-14 16:49:40.650277 W | etcdserver: read-only range request "key:\"/registry/controllers/\" range_end:\"/registry/controllers0\" count_only:true " with result "error:etcdserver: request timed out" took too long (12.932561198s) to execute
+2021-05-14 16:49:40.651731 W | etcdserver: read-only range request "key:\"/registry/volumeattachments/\" range_end:\"/registry/volumeattachments0\" count_only:true " with result "error:etcdserver: request timed out" took too long (17.408487848s) to execute
+2021-05-14 16:49:40.652917 W | etcdserver: read-only range request "key:\"/registry/agent.k8s.elastic.co/agents/\" range_end:\"/registry/agent.k8s.elastic.co/agents0\" count_only:true " with result "error:etcdserver: request timed out" took too long (13.781726054s) to execute
+2021-05-14 16:49:42.180545 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.002610296s) to execute
+2021-05-14 16:49:43.215513 W | wal: sync duration of 9.562235964s, expected less than 1s
+2021-05-14 16:49:43.393932 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "error:context deadline exceeded" took too long (4.994221095s) to execute
+2021-05-14 16:49:43.518417 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "error:context deadline exceeded" took too long (5.00190156s) to execute
+WARNING: 2021/05/14 16:49:43 grpc: Server.processUnaryRPC failed to write status: connection error: desc = "transport is closing"
+2021-05-14 16:49:44.192568 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000051535s) to execute
+2021-05-14 16:49:45.621262 W | etcdserver: request "header:<ID:519736299082879117 username:\"kube-apiserver-etcd-client\" auth_revision:1 > lease_grant:<ttl:15-second id:073679690bb6108c>" with result "size:43" took too long (2.405260194s) to execute
+2021-05-14 16:49:46.204952 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000040975s) to execute
+2021-05-14 16:49:47.646473 W | etcdserver: timed out waiting for read index response (local node might have slow network)
+2021-05-14 16:49:47.646646 W | etcdserver: read-only range request "key:\"/registry/services/endpoints/kubernetes-dashboard/dashboard-metrics-scraper\" " with result "error:etcdserver: request timed out" took too long (12.908440857s) to execute
+2021-05-14 16:49:47.646746 W | etcdserver: read-only range request "key:\"/registry/minions/\" range_end:\"/registry/minions0\" count_only:true " with result "error:etcdserver: request timed out" took too long (9.247493768s) to execute
+2021-05-14 16:49:47.646797 W | etcdserver: read-only range request "key:\"/registry/beat.k8s.elastic.co/beats/\" range_end:\"/registry/beat.k8s.elastic.co/beats0\" count_only:true " with result "error:etcdserver: request timed out" took too long (9.41115545s) to execute
+2021-05-14 16:49:47.646857 W | etcdserver: read-only range request "key:\"/registry/crd.projectcalico.org/bgppeers/\" range_end:\"/registry/crd.projectcalico.org/bgppeers0\" count_only:true " with result "error:etcdserver: request timed out" took too long (9.838826583s) to execute
+2021-05-14 16:49:47.646923 W | etcdserver: read-only range request "key:\"/registry/kibana.k8s.elastic.co/kibanas/\" range_end:\"/registry/kibana.k8s.elastic.co/kibanas0\" count_only:true " with result "error:etcdserver: request timed out" took too long (10.549874392s) to execute
+2021-05-14 16:49:47.647107 W | etcdserver: read-only range request "key:\"/registry/replicasets/\" range_end:\"/registry/replicasets0\" count_only:true " with result "error:etcdserver: request timed out" took too long (13.170239305s) to execute
+2021-05-14 16:49:47.647191 W | etcdserver: read-only range request "key:\"/registry/elasticsearch.k8s.elastic.co/elasticsearches/\" range_end:\"/registry/elasticsearch.k8s.elastic.co/elasticsearches0\" count_only:true " with result "error:etcdserver: request timed out" took too long (16.824675011s) to execute
+2021-05-14 16:49:47.647241 W | etcdserver: read-only range request "key:\"/registry/cronjobs/\" range_end:\"/registry/cronjobs0\" count_only:true " with result "error:etcdserver: request timed out" took too long (17.19567264s) to execute
+2021-05-14 16:49:47.647290 W | etcdserver: read-only range request "key:\"/registry/poddisruptionbudgets/\" range_end:\"/registry/poddisruptionbudgets0\" count_only:true " with result "error:etcdserver: request timed out" took too long (17.725938344s) to execute
+2021-05-14 16:49:47.647364 W | etcdserver: read-only range request "key:\"/registry/mutatingwebhookconfigurations/\" range_end:\"/registry/mutatingwebhookconfigurations0\" count_only:true " with result "error:etcdserver: request timed out" took too long (18.235532272s) to execute
+2021-05-14 16:49:47.648050 W | etcdserver: read-only range request "key:\"/registry/mutatingwebhookconfigurations/\" range_end:\"/registry/mutatingwebhookconfigurations0\" count_only:true " with result "error:etcdserver: request timed out" took too long (15.063260338s) to execute
+2021-05-14 16:49:47.648230 W | etcdserver: read-only range request "key:\"/registry/storageclasses/\" range_end:\"/registry/storageclasses0\" count_only:true " with result "error:etcdserver: request timed out" took too long (13.609552656s) to execute
+2021-05-14 16:49:47.648327 W | etcdserver: read-only range request "key:\"/registry/flowschemas/\" range_end:\"/registry/flowschemas0\" count_only:true " with result "error:etcdserver: request timed out" took too long (7.757600938s) to execute
+2021-05-14 16:49:47.648357 W | etcdserver: read-only range request "key:\"/registry/crd.projectcalico.org/felixconfigurations/\" range_end:\"/registry/crd.projectcalico.org/felixconfigurations0\" count_only:true " with result "error:etcdserver: request timed out" took too long (7.762523582s) to execute
+2021-05-14 16:49:47.648388 W | etcdserver: read-only range request "key:\"/registry/daemonsets/\" range_end:\"/registry/daemonsets0\" count_only:true " with result "error:etcdserver: request timed out" took too long (8.246352159s) to execute
+2021-05-14 16:49:47.648603 W | etcdserver: read-only range request "key:\"/registry/serviceaccounts/\" range_end:\"/registry/serviceaccounts0\" count_only:true " with result "error:etcdserver: request timed out" took too long (7.480614055s) to execute
+2021-05-14 16:49:47.648830 W | etcdserver: read-only range request "key:\"/registry/csidrivers/\" range_end:\"/registry/csidrivers0\" count_only:true " with result "error:etcdserver: request timed out" took too long (14.257050374s) to execute
+2021-05-14 16:49:47.648890 W | etcdserver: read-only range request "key:\"/registry/apiextensions.k8s.io/customresourcedefinitions/\" range_end:\"/registry/apiextensions.k8s.io/customresourcedefinitions0\" count_only:true " with result "error:etcdserver: request timed out" took too long (15.017829888s) to execute
+2021-05-14 16:49:47.648945 W | etcdserver: read-only range request "key:\"/registry/runtimeclasses/\" range_end:\"/registry/runtimeclasses0\" count_only:true " with result "error:etcdserver: request timed out" took too long (14.648260593s) to execute
+2021-05-14 16:49:47.649610 W | etcdserver: read-only range request "key:\"/registry/crd.projectcalico.org/blockaffinities/\" range_end:\"/registry/crd.projectcalico.org/blockaffinities0\" count_only:true " with result "error:etcdserver: request timed out" took too long (9.200458048s) to execute
+2021-05-14 16:49:48.213220 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000075478s) to execute
+2021-05-14 16:49:49.064158 W | etcdserver/api/etcdhttp: /health error; QGET failed etcdserver: request timed out (status code 503)
+2021-05-14 16:49:50.079197 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.002538287s) to execute
+2021-05-14 16:49:50.220564 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "error:context deadline exceeded" took too long (2.000009565s) to execute
+2021-05-14 16:49:50.769246 W | wal: sync duration of 7.545806347s, expected less than 1s
+2021-05-14 16:49:50.770157 W | etcdserver: ignored out-of-date read index response; local node read indexes queueing up and waiting to be in sync with leader (request ID want 15063829820687648697, got 15063829820687648694)
+2021-05-14 16:49:50.831324 W | etcdserver: ignored out-of-date read index response; local node read indexes queueing up and waiting to be in sync with leader (request ID want 15063829820687648697, got 15063829820687648696)
+2021-05-14 16:49:50.958218 W | etcdserver: read-only range request "key:\"/registry/ingressclasses/\" range_end:\"/registry/ingressclasses0\" count_only:true " with result "range_response_count:0 size:7" took too long (4.342815807s) to execute
+2021-05-14 16:49:50.958608 W | etcdserver: read-only range request "key:\"/registry/ingress/\" range_end:\"/registry/ingress0\" count_only:true " with result "range_response_count:0 size:7" took too long (9.924264295s) to execute
+2021-05-14 16:49:50.958879 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-scheduler\" " with result "range_response_count:1 size:478" took too long (4.924103368s) to execute
+2021-05-14 16:49:50.959191 W | etcdserver: read-only range request "key:\"/registry/apm.k8s.elastic.co/apmservers/\" range_end:\"/registry/apm.k8s.elastic.co/apmservers0\" count_only:true " with result "range_response_count:0 size:7" took too long (9.874018968s) to execute
+2021-05-14 16:49:50.959446 W | etcdserver: read-only range request "key:\"/registry/leases/kube-system/kube-controller-manager\" " with result "range_response_count:1 size:506" took too long (5.028923626s) to execute
+2021-05-14 16:49:50.959707 W | etcdserver: read-only range request "key:\"/registry/ingressclasses/\" range_end:\"/registry/ingressclasses0\" count_only:true " with result "range_response_count:0 size:7" took too long (6.832726863s) to execute
+2021-05-14 16:49:50.961944 W | etcdserver: read-only range request "key:\"/registry/resourcequotas/default/\" range_end:\"/registry/resourcequotas/default0\" " with result "range_response_count:0 size:7" took too long (10.298997938s) to execute
+2021-05-14 16:49:50.963150 W | etcdserver: read-only range request "key:\"/registry/resourcequotas/kube-system/\" range_end:\"/registry/resourcequotas/kube-system0\" " with result "range_response_count:0 size:7" took too long (10.30849744s) to execute
+2021-05-14 16:49:50.991326 W | etcdserver: read-only range request "key:\"/registry/namespaces/kube-public\" " with result "range_response_count:1 size:353" took too long (327.607593ms) to execute
+2021-05-14 16:49:50.991432 W | etcdserver: read-only range request "key:\"/registry/certificatesigningrequests/\" range_end:\"/registry/certificatesigningrequests0\" count_only:true " with result "range_response_count:0 size:7" took too long (385.238359ms) to execute
+2021-05-14 16:49:50.991999 W | etcdserver: read-only range request "key:\"/registry/cronjobs/\" range_end:\"/registry/cronjobs0\" count_only:true " with result "range_response_count:0 size:7" took too long (1.137777288s) to execute
+2021-05-14 16:49:50.992271 W | etcdserver: read-only range request "key:\"/registry/validatingwebhookconfigurations/\" range_end:\"/registry/validatingwebhookconfigurations0\" count_only:true " with result "range_response_count:0 size:9" took too long (3.132753024s) to execute
+2021-05-14 16:49:50.992752 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (761.430242ms) to execute
+2021-05-14 16:49:50.994553 W | etcdserver: read-only range request "key:\"/registry/namespaces/default\" " with result "range_response_count:1 size:343" took too long (330.558717ms) to execute
+2021-05-14 16:49:51.186894 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (113.35076ms) to execute
+2021-05-14 16:49:54.479204 W | etcdserver: read-only range request "key:\"/registry/flowschemas/exempt\" " with result "range_response_count:1 size:881" took too long (129.508259ms) to execute
+2021-05-14 16:49:56.197387 W | etcdserver: read-only range request "key:\"/registry/health\" " with result "range_response_count:0 size:7" took too long (122.866438ms) to execute
+2021-05-14 16:49:58.068341 I | etcdserver/api/etcdhttp: /health OK (status code 200)
+2021-05-14 16:50:08.068906 I | etcdserver/api/etcdhttp: /health OK (status code 200)
+2021-05-14 16:50:18.068762 I | etcdserver/api/etcdhttp: /health OK (status code 200)
+2021-05-14 16:50:28.068471 I | etcdserver/api/etcdhttp: /health OK (status code 200)
+```
 
 ```
 testjob: (groupid=0, jobs=12): err= 0: pid=10: Fri May 14 16:43:23 2021
