@@ -28,6 +28,7 @@ My use case is to test a base install of the following stack:
  1. 3x Dell R620 servers
    * Each: CPU(s) 32 x Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz (2 Sockets)
    * 256 MB Ram
+   * PERC H710P
    * 4x 556GB SAAS drives
  2. Proxmox 6.4 VE
  3. ZFS Raid 10
@@ -332,11 +333,13 @@ rpool       53.1G  1.03T      0    127      0  3.46M
 rpool       53.1G  1.03T      0     19      0   285K
 ```
 
-# Perc H310 replacement
+# PERC H710P replacement
+
+See [H310/H710/H710P/H810 Mini & Full Size IT Crossflashing](https://fohdeesha.com/docs/perc/).
 
 Comparison of the random read/write job1 between two configurations on the same node:
 
- 1. Dell stock firmware for Perc H310.
+ 1. Dell stock firmware for PERC H710P.
  2. LSI initiator target (IT) mode firmware.
 
 The hypothesis is the 512MB of cache on the dell firmware is causing a large
