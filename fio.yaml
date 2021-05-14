@@ -15,6 +15,16 @@ spec:
       labels:
         app: fio
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - fio
+            topologyKey: "kubernetes.io/hostname"
       containers:
       - name: fio
         image: joshuarobinson/fio:3.19
@@ -32,17 +42,4 @@ spec:
         configMap:
           name: fio-job-config
       - name: fio-data
-        persistentVolumeClaim:
-          claimName: fio-claim
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: fio-claim
-spec:
-  storageClassName: pure-file
-  accessModes:
-  - ReadWriteMany
-  resources:
-    requests:
-      storage: 1Ti
+        emptyDir: {}

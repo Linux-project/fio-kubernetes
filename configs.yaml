@@ -4,21 +4,19 @@ apiVersion: v1
 metadata:
   name: fio-job-config
 data:
+  # https://s905060.gitbooks.io/site-reliability-engineer-handbook/content/fio.html
+  # 8K block, 16 jobs
   fio.job: |-
     [global]
-    ioengine=psync
+    ioengine=libaio
+    iodepth=128
+    rw=randrw
+    bs=8K
     direct=1
-    buffered=0
-    size=10G
-    iodepth=1000
-    numjobs=100
+    size=1G
+    numjobs=12
+    ramp_time=5
+    runtime=60
+    time_based
     group_reporting
-    refill_buffers
-    rwmixread=80
-    norandommap
-    randrepeat=0
-    percentage_random=0
-    bs=512K
-    buffer_compress_percentage=50
-    rw=read
     [testjob]
