@@ -34,11 +34,29 @@ Error from server: etcdserver: leader changed
 Error from server (InternalError): an error on the server ("") has prevented the request from succeeding (get pods fio-c8xm8)
 ```
 
-# First run
+# First Run in k8s (job1)
 
-This run, all 7 of the nodes are running on zvols in Proxmox 6.4.  I think this
-what's causing the etcd timeouts according to [this
+This run, all 7 of the nodes are Proxmox guest VM's running on zvols in Proxmox
+6.4.  I think this what's causing the etcd timeouts according to [this
 thread](https://forum.proxmox.com/threads/high-disk-io-overhead-for-clients-on-zfs.80151/)
+
+The virtio scsi driver is used in the guest.
+
+```
+[global]
+ioengine=libaio
+iodepth=128
+rw=randrw
+bs=8K
+direct=1
+size=1G
+numjobs=12
+ramp_time=5
+runtime=60
+time_based
+group_reporting
+[job1]
+```
 
 ```
 ❯ k get pods -o wide
@@ -50,7 +68,7 @@ fio-lchqb   0/1     Completed   0          5m59s   10.65.128.202   k1-9e1c   <no
 
 ```
 # k logs fio-c8xm8
-testjob: (groupid=0, jobs=12): err= 0: pid=10: Fri May 14 04:48:08 2021
+job1: (groupid=0, jobs=12): err= 0: pid=10: Fri May 14 04:48:08 2021
   read: IOPS=3099, BW=24.3MiB/s (25.5MB/s)(1469MiB/60441msec)
     slat (usec): min=6, max=3540.7k, avg=1558.36, stdev=20618.60
     clat (msec): min=2, max=8167, avg=249.77, stdev=519.20
@@ -95,7 +113,7 @@ Disk stats (read/write):
 
 ```
 # k logs fio-g4vzl
-testjob: (groupid=0, jobs=12): err= 0: pid=9: Fri May 14 04:46:14 2021
+job1: (groupid=0, jobs=12): err= 0: pid=9: Fri May 14 04:46:14 2021
   read: IOPS=11.3k, BW=87.0MiB/s (92.3MB/s)(5284MiB/60051msec)
     slat (usec): min=5, max=251618, avg=423.78, stdev=2730.90
     clat (usec): min=252, max=1086.7k, avg=65384.45, stdev=74248.45
@@ -141,7 +159,7 @@ Disk stats (read/write):
 
 ```
 # logs fio-lchqb
-testjob: (groupid=0, jobs=12): err= 0: pid=9: Fri May 14 04:48:26 2021
+job1: (groupid=0, jobs=12): err= 0: pid=9: Fri May 14 04:48:26 2021
   read: IOPS=5104, BW=39.0MiB/s (41.9MB/s)(2402MiB/60079msec)
     slat (usec): min=6, max=802100, avg=966.58, stdev=8960.66
     clat (msec): min=3, max=2816, avg=145.48, stdev=208.61
@@ -182,6 +200,68 @@ Run status group 0 (all jobs):
 
 Disk stats (read/write):
   sda: ios=313580/314089, merge=19/178, ticks=25889231/27114911, in_queue=55047900, util=100.00%
+```
+
+Proxmox host job1
+===
+
+The same job1, but executed directly on the host using a ZFS dataset:
+
+```
+root@r620a:~# zpool status
+  pool: rpool
+ state: ONLINE
+config:
+
+	NAME                                              STATE     READ WRITE CKSUM
+	rpool                                             ONLINE       0     0     0
+	  mirror-0                                        ONLINE       0     0     0
+	    scsi-36c81f660cc719400283053fb1893524f-part3  ONLINE       0     0     0
+	    scsi-36c81f660cc7194002830540d19a51e68-part3  ONLINE       0     0     0
+	  mirror-1                                        ONLINE       0     0     0
+	    scsi-36c81f660cc719400283054211ae0d9c7-part3  ONLINE       0     0     0
+	    scsi-36c81f660cc719400283054351c0eaefd-part3  ONLINE       0     0     0
+```
+
+```
+testjob: (groupid=0, jobs=12): err= 0: pid=29763: Thu May 13 22:02:17 2021
+  read: IOPS=2804, BW=22.0MiB/s (23.1MB/s)(1321MiB/60004msec)
+    slat (nsec): min=0, max=3466.4k, avg=39298.56, stdev=24129.56
+    clat (nsec): min=0, max=480676k, avg=270941882.56, stdev=38148652.68
+     lat (nsec): min=0, max=480720k, avg=270981502.50, stdev=38150822.03
+    clat percentiles (msec):
+     |  1.00th=[  199],  5.00th=[  220], 10.00th=[  230], 20.00th=[  243],
+     | 30.00th=[  251], 40.00th=[  259], 50.00th=[  268], 60.00th=[  275],
+     | 70.00th=[  288], 80.00th=[  296], 90.00th=[  313], 95.00th=[  334],
+     | 99.00th=[  397], 99.50th=[  414], 99.90th=[  443], 99.95th=[  456],
+     | 99.99th=[  468]
+   bw (  KiB/s): min=    0, max= 2656, per=8.30%, avg=1869.73, stdev=268.23, samples=1438
+   iops        : min=    0, max=  332, avg=233.69, stdev=33.54, samples=1438
+  write: IOPS=2808, BW=22.0MiB/s (23.1MB/s)(1323MiB/60004msec); 0 zone resets
+    slat (nsec): min=0, max=45675k, avg=4224369.44, stdev=568060.37
+    clat (nsec): min=0, max=480158k, avg=271049781.62, stdev=38197160.42
+     lat (nsec): min=0, max=486997k, avg=275278475.52, stdev=38506306.73
+    clat percentiles (msec):
+     |  1.00th=[  199],  5.00th=[  220], 10.00th=[  230], 20.00th=[  243],
+     | 30.00th=[  251], 40.00th=[  259], 50.00th=[  268], 60.00th=[  275],
+     | 70.00th=[  288], 80.00th=[  296], 90.00th=[  313], 95.00th=[  334],
+     | 99.00th=[  397], 99.50th=[  414], 99.90th=[  443], 99.95th=[  451],
+     | 99.99th=[  464]
+   bw (  KiB/s): min=    0, max= 2448, per=8.29%, avg=1872.18, stdev=219.02, samples=1438
+   iops        : min=    0, max=  306, avg=234.00, stdev=27.39, samples=1438
+  lat (usec)   : 10=0.01%, 20=0.01%
+  lat (msec)   : 4=0.01%, 10=0.01%, 20=0.01%, 50=0.06%, 100=0.09%
+  lat (msec)   : 250=28.81%, 500=71.46%
+  cpu          : usr=0.27%, sys=2.73%, ctx=169053, majf=1, minf=183
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.1%
+     issued rwts: total=168309,168539,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=128
+
+Run status group 0 (all jobs):
+   READ: bw=22.0MiB/s (23.1MB/s), 22.0MiB/s-22.0MiB/s (23.1MB/s-23.1MB/s), io=1321MiB (1385MB), run=60004-60004msec
+  WRITE: bw=22.0MiB/s (23.1MB/s), 22.0MiB/s-22.0MiB/s (23.1MB/s-23.1MB/s), io=1323MiB (1387MB), run=60004-60004msec
 ```
 
 # Reference
