@@ -9,7 +9,7 @@ Handbook](https://s905060.gitbooks.io/site-reliability-engineer-handbook/content
 # Add the configmap
 kubectl apply -f https://raw.githubusercontent.com/openinfrastructure/fio-kubernetes/master/configs.yaml
 # Run the jobs for 60 seconds.
-kubectl apply -f https://raw.githubusercontent.com/openinfrastructure/fio-kubernetes/master/configs.yaml
+kubectl apply -f https://raw.githubusercontent.com/openinfrastructure/fio-kubernetes/master/fio.yaml
 ```
 
 Collect the results using `kubectl get pods` and `kubectl logs`.
@@ -330,6 +330,66 @@ rpool       58.3G  1.03T      0  3.52K      0   449M
 rpool       58.3G  1.03T      0     20      0   370K
 rpool       53.1G  1.03T      0    127      0  3.46M
 rpool       53.1G  1.03T      0     19      0   285K
+```
+
+# Perc H310 replacement
+
+Comparison of the random read/write job1 between two configurations on the same node:
+
+ 1. Dell stock firmware for Perc H310.
+ 2. LSI initiator target (IT) mode firmware.
+
+The hypothesis is the 512MB of cache on the dell firmware is causing a large
+IOPS backlog, which is too much latency for the k8s controller nodes.  etcd
+leader writes specifically.
+
+## Dell Firmware
+
+Run on r620c only with the dell firmware:
+
+```
+testjob: (groupid=0, jobs=12): err= 0: pid=10: Fri May 14 16:43:23 2021
+  read: IOPS=10.1k, BW=79.1MiB/s (82.0MB/s)(4751MiB/60053msec)
+    slat (usec): min=5, max=382179, avg=463.84, stdev=3584.34
+    clat (usec): min=735, max=1863.9k, avg=72486.63, stdev=97045.23
+     lat (usec): min=780, max=1863.9k, avg=72953.53, stdev=97707.59
+    clat percentiles (msec):
+     |  1.00th=[    5],  5.00th=[    7], 10.00th=[    9], 20.00th=[   14],
+     | 30.00th=[   21], 40.00th=[   33], 50.00th=[   45], 60.00th=[   59],
+     | 70.00th=[   78], 80.00th=[  105], 90.00th=[  159], 95.00th=[  232],
+     | 99.00th=[  493], 99.50th=[  625], 99.90th=[ 1003], 99.95th=[ 1116],
+     | 99.99th=[ 1351]
+   bw (  KiB/s): min= 2830, max=504550, per=98.84%, avg=80065.34, stdev=6278.23, samples=1428
+   iops        : min=  352, max=63063, avg=10007.24, stdev=784.71, samples=1428
+  write: IOPS=10.1k, BW=79.1MiB/s (82.9MB/s)(4750MiB/60053msec); 0 zone resets
+    slat (usec): min=6, max=349939, avg=470.04, stdev=3621.64
+    clat (usec): min=1291, max=1864.0k, avg=78277.90, stdev=101175.43
+     lat (usec): min=1314, max=1910.4k, avg=78751.05, stdev=101814.17
+    clat percentiles (msec):
+     |  1.00th=[    7],  5.00th=[    9], 10.00th=[   11], 20.00th=[   17],
+     | 30.00th=[   25], 40.00th=[   37], 50.00th=[   50], 60.00th=[   64],
+     | 70.00th=[   84], 80.00th=[  112], 90.00th=[  169], 95.00th=[  247],
+     | 99.00th=[  510], 99.50th=[  651], 99.90th=[ 1036], 99.95th=[ 1183],
+     | 99.99th=[ 1418]
+   bw (  KiB/s): min= 2831, max=508061, per=98.83%, avg=80046.54, stdev=6311.22, samples=1428
+   iops        : min=  353, max=63503, avg=10004.93, stdev=788.84, samples=1428
+  lat (usec)   : 750=0.01%, 1000=0.01%
+  lat (msec)   : 2=0.01%, 4=0.39%, 10=11.56%, 20=15.01%, 50=25.51%
+  lat (msec)   : 100=25.07%, 250=17.97%, 500=3.59%, 750=0.70%, 1000=0.20%
+  lat (msec)   : 2000=0.11%
+  cpu          : usr=1.40%, sys=3.56%, ctx=1090869, majf=0, minf=713
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.1%
+     issued rwts: total=607356,607215,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=128
+
+Run status group 0 (all jobs):
+   READ: bw=79.1MiB/s (82.0MB/s), 79.1MiB/s-79.1MiB/s (82.0MB/s-82.0MB/s), io=4751MiB (4982MB), run=60053-60053msec
+  WRITE: bw=79.1MiB/s (82.9MB/s), 79.1MiB/s-79.1MiB/s (82.9MB/s-82.9MB/s), io=4750MiB (4981MB), run=60053-60053msec
+
+Disk stats (read/write):
+  sda: ios=660161/660256, merge=172/341, ticks=28084610/30045312, in_queue=61318072, util=100.00%
 ```
 
 # Reference
