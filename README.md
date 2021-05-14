@@ -3,6 +3,24 @@
 Forked to have better defaults sourced from the [SRE
 Handbook](https://s905060.gitbooks.io/site-reliability-engineer-handbook/content/fio.html).
 
+# Usage
+
+```
+# Add the configmap
+kubectl apply -f https://raw.githubusercontent.com/openinfrastructure/fio-kubernetes/master/configs.yaml
+# Run the jobs for 60 seconds.
+kubectl apply -f https://raw.githubusercontent.com/openinfrastructure/fio-kubernetes/master/configs.yaml
+```
+
+Collect the results using `kubectl get pods` and `kubectl logs`.
+
+Clean up:
+
+```
+kubectl delete configmap/fio-job-config
+kubectl delete job/fio
+```
+
 # Proxmox 6.4 VE
 
 My use case is to test a base install of the following stack:
@@ -262,6 +280,56 @@ testjob: (groupid=0, jobs=12): err= 0: pid=29763: Thu May 13 22:02:17 2021
 Run status group 0 (all jobs):
    READ: bw=22.0MiB/s (23.1MB/s), 22.0MiB/s-22.0MiB/s (23.1MB/s-23.1MB/s), io=1321MiB (1385MB), run=60004-60004msec
   WRITE: bw=22.0MiB/s (23.1MB/s), 22.0MiB/s-22.0MiB/s (23.1MB/s-23.1MB/s), io=1323MiB (1387MB), run=60004-60004msec
+```
+
+# Notes
+
+Running the same job1 again, `zpool iostat 3` reports good write throughput:
+
+```
+              capacity     operations     bandwidth
+pool        alloc   free   read  write   read  write
+----------  -----  -----  -----  -----  -----  -----
+rpool       49.0G  1.04T      0  15.9K      0   617M
+rpool       49.0G  1.04T      0  3.42K      0   639M
+rpool       49.0G  1.04T      0  17.5K      0   632M
+rpool       49.0G  1.04T      0  2.32K      0   607M
+rpool       49.0G  1.04T      0  16.6K      0   620M
+rpool       49.0G  1.04T      0  9.26K      0   620M
+rpool       53.1G  1.03T      0  9.65K      0   612M
+rpool       53.1G  1.03T      0  9.19K      0   613M
+rpool       53.1G  1.03T      0  8.67K      0   612M
+rpool       53.1G  1.03T      0  8.83K      0   601M
+rpool       53.1G  1.03T      0  10.1K      0   620M
+rpool       53.1G  1.03T      0  18.1K      0   562M
+rpool       57.1G  1.03T      0  14.2K      0   462M
+rpool       57.1G  1.03T      0  17.2K      0   559M
+rpool       57.1G  1.03T      0  4.79K      0   370M
+rpool       57.1G  1.03T      0  2.32K      0   224M
+rpool       57.1G  1.03T      0  2.25K      0   218M
+rpool       57.1G  1.03T      0  5.92K      0   367M
+rpool       57.1G  1.03T      0  12.5K      0   426M
+rpool       57.1G  1.03T      0  11.9K      0   423M
+rpool       57.1G  1.03T      0  1.44K      0   172M
+rpool       58.7G  1.03T      0  1.72K      0   172M
+rpool       58.7G  1.03T      0  2.58K      0   272M
+rpool       58.7G  1.03T      0  2.63K      0   276M
+rpool       58.7G  1.03T      0  2.98K      0   306M
+rpool       58.7G  1.03T      0  5.51K      0   295M
+rpool       58.7G  1.03T      0  9.81K      0   445M
+rpool       58.7G  1.03T      0  2.57K      0   273M
+rpool       58.7G  1.03T      0  3.13K      0   298M
+rpool       58.7G  1.03T      0  4.10K      0   298M
+rpool       58.7G  1.03T      0  2.34K      0   228M
+rpool       58.7G  1.03T      0  5.12K      0   317M
+rpool       58.7G  1.03T      0  3.29K      0   302M
+rpool       58.7G  1.03T      0  7.20K      0   319M
+rpool       60.2G  1.03T      0  10.1K      0   514M
+rpool       60.2G  1.03T      0  4.14K      0   595M
+rpool       58.3G  1.03T      0  3.52K      0   449M
+rpool       58.3G  1.03T      0     20      0   370K
+rpool       53.1G  1.03T      0    127      0  3.46M
+rpool       53.1G  1.03T      0     19      0   285K
 ```
 
 # Reference
