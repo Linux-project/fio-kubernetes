@@ -1,3 +1,3 @@
 FROM alpine
 
-RUN apk add fio bc bash --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+RUN apk add fio bc bash coreutils curl perf sysstat --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
